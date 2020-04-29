@@ -1,0 +1,172 @@
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>BunnyLine</title>
+    <!--<script src="createjs.min.js"></script>-->
+    <script src="createjs.js"></script>
+    <script src="Circle.js"></script>
+    <script src="Octagon.js"></script>
+    <script src="Square.js"></script>
+    <script src="Numberline.js"></script>
+    <script src="NumberBox.js"></script>
+    <script src="NumberSentence.js"></script>
+    <script src="Bunny.js"></script>
+    <script src="Carrot.js"></script>
+    <script src="CarrotCounter.js"></script>
+    <script src="WinBunny.js"></script>
+    <script src="Util.js"></script>
+    <!--<link rel="stylesheet" href="./resources/font-awesome-4.7.0/css/font-awesome.css"> -->
+    <!--<link rel="stylesheet" href="./resources/fontawesome/css/fontawesome.css"> -->
+    <style>
+        @font-face {
+            font-family: FontAwesome;
+            src: url("resources/fa-solid-900.ttf") format("truetype");
+        }
+    </style>
+    <script>
+        let stage;
+        let bunny;
+        let canvas;
+        let nl;
+        let nb;
+        let ns;
+        let carrot;
+        let carrotcounter;
+        let wb;
+        const curritem = null;
+        const waiting = false;
+        const prevloc = null;
+        const ticktime = 50;
+        //var queue = new createjs.LoadQueue();
+        //queue.loadFile({id: 'bunny', src:'./resources/bunny.png'});
+        //queue.load();
+        //queue.on('complete', init);
+        window.onload = init;
+
+        function init() {
+            if (window.location.protocol === 'file:') {
+                createjs.Sound.registerPlugins([createjs.HTMLAudioPlugin]);
+            } else {
+                createjs.Sound.registerPlugins([createjs.WebAudioPlugin, createjs.HTMLAudioPlugin]);
+            }
+            createjs.Sound.alternateExtensions = ["mp3"];
+            createjs.Sound.registerSound("./resources/happychirp.mp3", "happychirp", 1);
+            createjs.Sound.registerSound("./resources/sadchirp.mp3", "sadchirp", 1);
+            createjs.Sound.registerSound("./resources/musicloop.mp3", "musicloop", 1);
+            createjs.Sound.on("fileload", function (event) {
+                //console.log(event);
+                if (event.id === "musicloop") {
+                    try {
+                        /*this causes "Uncaught (in promise) DOMException" error in chrome, despite the try/catch. This
+                        is most likely due to chrome blocking autoplay, which is worked around by using the
+                        resumeaudiocontext function attached to the window onclick listener. Otherwise, works fine in
+                        firefox.*/
+                        /*let instance = createjs.Sound.play("musicloop", {
+                            interrupt: createjs.Sound.INTERRUPT_ANY,
+                            loop: -1
+                        });
+                        instance.volume = 0.2;*/
+                    } catch (e) {
+                        console.log(e);
+                        resumeAudioContext();
+                    }
+                }
+            });
+
+            var resumeAudioContext = function () {
+                // handler for fixing suspended audio context in Chrome
+                try {
+                    if (createjs.WebAudioPlugin.context && createjs.WebAudioPlugin.context.state === "suspended") {
+                        createjs.WebAudioPlugin.context.resume();
+                    }
+                    let instance = createjs.Sound.play("musicloop", {
+                        interrupt: createjs.Sound.INTERRUPT_ANY,
+                        loop: -1
+                    });
+                    instance.volume = 0.2;
+                } catch (e) {
+                    // SoundJS context or web audio plugin may not exist
+                    console.error("There was an error while trying to resume the SoundJS Web Audio context...");
+                    console.error(e);
+                }
+                // Should only need to fire once
+                window.removeEventListener("click", resumeAudioContext);
+            };
+            window.addEventListener("click", resumeAudioContext);
+
+            canvas = document.getElementById('bunnylinecanvas');
+            window.onresize = resize;
+            setCanvasSize(canvas);
+            unloadScrollBars();
+            stage = new createjs.Stage(canvas);
+            stage.enableMouseOver();
+            createjs.Touch.enable(stage);
+
+            nl = new NumberLine();
+            stage.addChild(nl);
+
+            ns = new NumberSentence();
+            stage.addChild(ns);
+
+            nb = new NumberBox();
+            stage.addChild(nb);
+
+
+            bunny = new Bunny();
+            stage.addChild(bunny);
+
+            carrot = new Carrot(true);
+            stage.addChild(carrot);
+
+            carrotcounter = new CarrotCounter();
+            stage.addChild(carrotcounter);
+
+            wb = new WinBunny();
+            stage.addChild(wb);
+
+            ns.setStart();
+            nb.setSignClick(true);
+
+            createjs.Ticker.addEventListener("tick", handleTick);
+
+            const loc = nl.locations[bunny.loc];
+            bunny.x = loc.x;// - w + loc.getBounds().width / 2;
+            bunny.y = loc.y - loc.getBounds().height / 3;
+
+            carrot.placeCarrot(nl.locations[carrot.randomCarrotLoc(bunny.loc)]);
+            //console.log(canvas);
+            //updatebunloc();
+
+            //resize();
+        }
+
+        function handleTick() {
+            //updatebunloc();
+            //if(curritem){
+            //    curritem.x = stage.mouseX - curritem.getBounds().width/ 2;
+            //    curritem.y = stage.mouseY - curritem.getBounds().height / 2;
+            //}
+            if (stage) {
+                stage.update()
+            }
+        }
+
+        function resize() {
+            bunny.resize();
+            nl.resize();
+            nb.resize();
+            ns.resize();
+            carrot.resize();
+            carrotcounter.resize();
+            wb.resize();
+            setCanvasSize(canvas);
+        }
+
+    </script>
+</head>
+<body style="background-color: black; margin:0; border:0;">
+
+<canvas id="bunnylinecanvas">
+</canvas>
+</body>
+</html>
